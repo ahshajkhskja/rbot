@@ -79,8 +79,13 @@ def get_detailed_roblox_info(asset_id):
         if cat_res.ok:
             cat_data = cat_res.json().get("data", [])
             if cat_data:
-                token = cat_data[0].get("thumbnail", {})
-                if isinstance(token, str) and token.startswith("http"):
+                item_data = cat_data[0]
+                token = item_data.get("thumbnail")
+                if isinstance(token, dict):
+                    url = token.get("imageUrl") or token.get("Url") or token.get("url")
+                    if url and url.startswith("http"):
+                        thumb_url = url
+                elif isinstance(token, str) and token.startswith("http"):
                     thumb_url = token
     except Exception:
         pass
@@ -199,7 +204,7 @@ def send_premium_webhook(asset_id, stream_type):
     }
 
     if info["thumb"] and str(info["thumb"]).startswith("http"):
-        embed["image"] = {"url": info["thumb"]}
+        embed["thumbnail"] = {"url": info["thumb"]}
 
     payload = {"embeds": [embed]}
 
