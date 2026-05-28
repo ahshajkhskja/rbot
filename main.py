@@ -70,14 +70,23 @@ def get_detailed_roblox_info(asset_id):
     except Exception:
         pass
     
-    try:
-        thumb_res = session.get(f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false", timeout=8)
-        if thumb_res.ok:
-            thumb_data = thumb_res.json().get("data", [])
-            if thumb_data:
-                thumb_url = thumb_data[0].get("imageUrl")
-    except Exception:
-        pass
+    for attempt in range(5):
+        try:
+            thumb_res = session.get(
+                f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false",
+                timeout=8
+            )
+            if thumb_res.ok:
+                thumb_data = thumb_res.json().get("data", [])
+                if thumb_data:
+                    state = thumb_data[0].get("state", "")
+                    url = thumb_data[0].get("imageUrl")
+                    if state == "Completed" and url and url.startswith("http"):
+                        thumb_url = url
+                        break
+        except Exception:
+            pass
+        time.sleep(2)
     
     return {
         "name": item_name,
