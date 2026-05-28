@@ -89,6 +89,49 @@ def get_detailed_roblox_info(asset_id):
                         break
         except Exception:
             pass
+
+        if not thumb_url:
+            try:
+                batch_res = thumb_session.post(
+                    "https://thumbnails.roblox.com/v1/batch",
+                    json=[{
+                        "requestId": f"{asset_id}::Asset:420x420:png:regular",
+                        "type": "Asset",
+                        "targetId": int(asset_id),
+                        "format": "png",
+                        "size": "420x420"
+                    }],
+                    timeout=8
+                )
+                if batch_res.ok:
+                    batch_data = batch_res.json().get("data", [])
+                    if batch_data:
+                        state = batch_data[0].get("state", "")
+                        url = batch_data[0].get("imageUrl")
+                        if url and url.startswith("http") and state != "Blocked":
+                            thumb_url = url
+                            break
+            except Exception:
+                pass
+
+        if not thumb_url:
+            try:
+                collect_res = thumb_session.get(
+                    f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&returnPolicy=PlaceHolder&size=420x420&format=Png&isCircular=false",
+                    timeout=8
+                )
+                if collect_res.ok:
+                    collect_data = collect_res.json().get("data", [])
+                    if collect_data:
+                        url = collect_data[0].get("imageUrl")
+                        if url and url.startswith("http"):
+                            thumb_url = url
+                            break
+            except Exception:
+                pass
+
+        if thumb_url:
+            break
         time.sleep(2)
 
     if not thumb_url:
