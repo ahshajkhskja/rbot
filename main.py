@@ -30,7 +30,7 @@ def get_detailed_roblox_info(asset_id):
     game_url = None
     game_name = "N/A"
     thumb_url = None
-    item_type_desc = "UGC Item Went Limited"
+    item_type_desc = "UGC Limited Detected"
     
     try:
         res = session.get(f"https://economy.roblox.com/v2/assets/{asset_id}/details", timeout=8)
@@ -132,12 +132,14 @@ def send_premium_webhook(asset_id, stream_type):
     if location_status:
         description = (
             f"⭐ **{info['type_desc']}**\n"
+            f"🔴 **Limit {info['quantity']}**\n"
             f"🌐 **{location_status}**\n"
             f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
         )
     else:
         description = (
             f"⭐ **{info['type_desc']}**\n"
+            f"🔴 **Limit {info['quantity']}**\n"
             f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
         )
 
