@@ -1,3 +1,4 @@
+
 import time
 import json
 import hashlib
@@ -69,69 +70,15 @@ def get_detailed_roblox_info(asset_id):
                 sale_location = "Web UGC"
     except Exception:
         pass
-
+    
     try:
-        cat_res = session.post(
-            "https://catalog.roblox.com/v1/catalog/items/details",
-            json={"items": [{"itemType": "Asset", "id": int(asset_id)}]},
-            timeout=8
-        )
-        if cat_res.ok:
-            cat_data = cat_res.json().get("data", [])
-            if cat_data:
-                item_data = cat_data[0]
-                token = item_data.get("thumbnail")
-                if isinstance(token, dict):
-                    url = token.get("imageUrl") or token.get("Url") or token.get("url")
-                    if url and url.startswith("http"):
-                        thumb_url = url
-                elif isinstance(token, str) and token.startswith("http"):
-                    thumb_url = token
+        thumb_res = session.get(f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false", timeout=8)
+        if thumb_res.ok:
+            thumb_data = thumb_res.json().get("data", [])
+            if thumb_data:
+                thumb_url = thumb_data[0].get("imageUrl")
     except Exception:
         pass
-
-    if not thumb_url:
-        for attempt in range(4):
-            try:
-                batch_res = session.post(
-                    "https://thumbnails.roblox.com/v1/batch",
-                    json=[{
-                        "requestId": f"{asset_id}::Asset:420x420:png:regular",
-                        "type": "Asset",
-                        "targetId": int(asset_id),
-                        "format": "png",
-                        "size": "420x420"
-                    }],
-                    timeout=8
-                )
-                if batch_res.ok:
-                    batch_data = batch_res.json().get("data", [])
-                    if batch_data:
-                        state = batch_data[0].get("state", "")
-                        url = batch_data[0].get("imageUrl")
-                        if url and url.startswith("http") and state != "Blocked":
-                            thumb_url = url
-                            break
-            except Exception:
-                pass
-            try:
-                get_res = session.get(
-                    f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false",
-                    timeout=8
-                )
-                if get_res.ok:
-                    get_data = get_res.json().get("data", [])
-                    if get_data:
-                        url = get_data[0].get("imageUrl")
-                        if url and url.startswith("http"):
-                            thumb_url = url
-                            break
-            except Exception:
-                pass
-            time.sleep(2)
-
-    if not thumb_url:
-        thumb_url = f"https://tr.rbxcdn.com/{asset_id}/420/420/Image/Png"
     
     return {
         "name": item_name,
@@ -231,21 +178,20 @@ def monitor():
     processed_ids = set()
     while True:
         try:
-
             for item in fetch_data(URL_FREE):
                 if isinstance(item, dict) and "free" in item:
                     asset_id = str(item["free"])
                     if asset_id not in processed_ids:
                         processed_ids.add(asset_id)
                         send_premium_webhook(asset_id, "free")
-
+            
             for item in fetch_data(URL_PAID):
                 if isinstance(item, dict) and "paid" in item:
                     asset_id = str(item["paid"])
                     if asset_id not in processed_ids:
                         processed_ids.add(asset_id)
                         send_premium_webhook(asset_id, "paid")
-
+            
             for item in fetch_data(URL_WEBSITE):
                 if isinstance(item, dict):
                     asset_id = item.get("website") or item.get("free") or item.get("paid")
