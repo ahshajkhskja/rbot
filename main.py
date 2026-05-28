@@ -30,7 +30,6 @@ def get_detailed_roblox_info(asset_id):
     game_url = None
     game_name = "N/A"
     thumb_url = None
-    item_type_desc = "UGC Limited Detected"
     
     try:
         res = session.get(f"https://economy.roblox.com/v2/assets/{asset_id}/details", timeout=8)
@@ -68,10 +67,6 @@ def get_detailed_roblox_info(asset_id):
                             game_url = f"https://www.roblox.com/games/{root_place}/"
             else:
                 sale_location = "Web UGC"
-            
-            is_limited = collectible_details.get("IsLimited")
-            if is_limited:
-                item_type_desc = "UGC Limited Detected"
     except Exception:
         pass
     
@@ -93,8 +88,7 @@ def get_detailed_roblox_info(asset_id):
         "location": sale_location,
         "game_name": game_name,
         "game_url": game_url,
-        "thumb": thumb_url,
-        "type_desc": item_type_desc
+        "thumb": thumb_url
     }
 
 def send_premium_webhook(asset_id, stream_type):
@@ -110,13 +104,13 @@ def send_premium_webhook(asset_id, stream_type):
         webhook_url = WEBHOOK_WEB_UGC
         role_id = ROLE_WEB_UGC
         embed_color = 3066993
-        sale_emoji = "🏷️"
+        sale_emoji = "🧺"
         sale_text = "Go Get This Web Fast"
     else:
         webhook_url = WEBHOOK_FREE
         role_id = ROLE_FREE
         embed_color = 3447003
-        sale_emoji = "🧺"
+        sale_emoji = "🛒"
         sale_text = "Get in-game without captcha!"
 
     item_url = f"https://www.roblox.com/catalog/{asset_id}/"
@@ -131,13 +125,11 @@ def send_premium_webhook(asset_id, stream_type):
 
     if location_status:
         description = (
-            f"⭐ **{info['type_desc']}**\n"
             f"🌐 **{location_status}**\n"
             f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
         )
     else:
         description = (
-            f"⭐ **{info['type_desc']}**\n"
             f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
         )
 
