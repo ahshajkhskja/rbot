@@ -69,19 +69,41 @@ def get_detailed_roblox_info(asset_id):
                 sale_location = "Web UGC"
     except Exception:
         pass
-    
+
     for attempt in range(5):
         try:
-            thumb_res = session.get(
+            batch_res = session.post(
+                "https://thumbnails.roblox.com/v1/batch",
+                json=[{
+                    "requestId": f"{asset_id}::Asset:420x420:png:regular",
+                    "type": "Asset",
+                    "targetId": int(asset_id),
+                    "format": "png",
+                    "size": "420x420"
+                }],
+                timeout=8
+            )
+            if batch_res.ok:
+                batch_data = batch_res.json().get("data", [])
+                if batch_data:
+                    state = batch_data[0].get("state", "")
+                    url = batch_data[0].get("imageUrl")
+                    if url and url.startswith("http") and state != "Blocked":
+                        thumb_url = url
+                        break
+        except Exception:
+            pass
+
+        try:
+            get_res = session.get(
                 f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false",
                 timeout=8
             )
-            if thumb_res.ok:
-                thumb_data = thumb_res.json().get("data", [])
-                if thumb_data:
-                    state = thumb_data[0].get("state", "")
-                    url = thumb_data[0].get("imageUrl")
-                    if state == "Completed" and url and url.startswith("http"):
+            if get_res.ok:
+                get_data = get_res.json().get("data", [])
+                if get_data:
+                    url = get_data[0].get("imageUrl")
+                    if url and url.startswith("http"):
                         thumb_url = url
                         break
         except Exception:
@@ -159,7 +181,7 @@ def send_premium_webhook(asset_id, stream_type):
     }
 
     if info["thumb"] and str(info["thumb"]).startswith("http"):
-        embed["thumbnail"] = {"url": info["thumb"]}
+        embed["image"] = {"url": info["thumb"]}
 
     payload = {"embeds": [embed]}
 
@@ -186,23 +208,21 @@ def monitor():
     processed_ids = set()
     while True:
         try:
-            # Free
+
             for item in fetch_data(URL_FREE):
                 if isinstance(item, dict) and "free" in item:
                     asset_id = str(item["free"])
                     if asset_id not in processed_ids:
                         processed_ids.add(asset_id)
                         send_premium_webhook(asset_id, "free")
-            
-            # Paid
+
             for item in fetch_data(URL_PAID):
                 if isinstance(item, dict) and "paid" in item:
                     asset_id = str(item["paid"])
                     if asset_id not in processed_ids:
                         processed_ids.add(asset_id)
                         send_premium_webhook(asset_id, "paid")
-            
-            # Website
+
             for item in fetch_data(URL_WEBSITE):
                 if isinstance(item, dict):
                     asset_id = item.get("website") or item.get("free") or item.get("paid")
