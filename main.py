@@ -26,13 +26,17 @@ def get_detailed_roblox_info(asset_id):
     creator_type = "User"
     price_val = "FREE"
     total_quantity = "N/A"
+    sale_location = "Catalog Website"
     game_url = None
     game_name = "N/A"
     thumb_url = None
     item_type_desc = "UGC Item Went Limited"
 
     try:
-        res = session.get(f"https://economy.roblox.com/v2/assets/{asset_id}/details", timeout=8)
+        res = session.get(
+            f"https://economy.roblox.com/v2/assets/{asset_id}/details",
+            timeout=8
+        )
 
         if res.ok:
             det = res.json()
@@ -44,20 +48,27 @@ def get_detailed_roblox_info(asset_id):
             creator_id = creator.get("CreatorTargetId", "")
             creator_type = creator.get("CreatorType", "User")
 
-            price = det.get("PriceInRobux")
+            price = det.get("PriceInRobux", 0)
 
-            if price is not None and price > 0:
+            if price and price > 0:
                 price_val = f"{price} Robux"
+            else:
+                price_val = "FREE"
 
-            limit = det.get("CollectibleQuantityLimit")
+            collectible_details = det.get("CollectiblesItemDetails", {})
 
-            if limit is not None:
-                total_quantity = str(limit)
+            total_qty = collectible_details.get("TotalQuantity")
 
-            allowed_universes = det.get("CollectibleAllowedUniverses", [])
+            if total_qty is not None:
+                total_quantity = str(total_qty)
 
-            if allowed_universes:
-                target_universe = allowed_universes[0]
+            sale_location_data = det.get("SaleLocation", {})
+            universe_ids = sale_location_data.get("UniverseIds", [])
+
+            if universe_ids:
+                sale_location = "In-Game Only"
+
+                target_universe = universe_ids[0]
 
                 univ_res = session.get(
                     f"https://games.roblox.com/v1/games?universeIds={target_universe}",
@@ -68,11 +79,18 @@ def get_detailed_roblox_info(asset_id):
                     game_data = univ_res.json().get("data", [])
 
                     if game_data:
-                        root_place = game_data[0].get("rootPlaceId")
-                        game_name = game_data[0].get("name", "Target Experience")
+                        game = game_data[0]
+
+                        root_place = game.get("rootPlaceId")
+                        game_name = game.get("name", "Target Experience")
 
                         if root_place:
                             game_url = f"https://www.roblox.com/games/{root_place}/"
+
+            is_limited = collectible_details.get("IsLimited")
+
+            if is_limited:
+                item_type_desc = "UGC Limited Detected"
 
     except Exception:
         pass
@@ -98,6 +116,7 @@ def get_detailed_roblox_info(asset_id):
         "creator_link": f"https://www.roblox.com/groups/{creator_id}/" if str(creator_type) == "Group" else f"https://www.roblox.com/users/{creator_id}/profile",
         "price": price_val,
         "quantity": total_quantity,
+        "location": sale_location,
         "game_name": game_name,
         "game_url": game_url,
         "thumb": thumb_url,
@@ -111,69 +130,37 @@ def send_premium_webhook(asset_id, stream_type):
         webhook_url = WEBHOOK_PAID
         role_id = ROLE_PAID
         embed_color = 15158332
+        location_status = "In-Game Only" if info["game_url"] else "Web UGC"
 
     elif stream_type == "website":
         webhook_url = WEBHOOK_WEB_UGC
         role_id = ROLE_WEB_UGC
         embed_color = 3066993
+        location_status = "Web UGC"
 
     else:
         webhook_url = WEBHOOK_REGULAR
         role_id = ROLE_REGULAR
         embed_color = 3447003
+        location_status = "In-Game Only" if info["game_url"] else "Web UGC"
 
     item_url = f"https://www.roblox.com/catalog/{asset_id}/"
     try_on_url = f"https://www.roblox.com/catalog/{asset_id}/#try-on-item"
 
-    if stream_type == "website":
-        description = (
-            f"✨ **{info['type_desc']}**\n"
-            f"🌐 [Roblox Page]({item_url}) │ 👕 [Try On]({try_on_url})\n\n"
-            f"✅ Get in-game without captcha!"
-        )
+    description = (
+        f"✨ **{info['type_desc']}**\n"
+        f"🎮 **{location_status}**\n"
+        f"🌐 [Roblox Page]({item_url}) │ 👕 [Try On]({try_on_url})"
+    )
 
-        fields = [
-            {"name": "Price", "value": "FREE", "inline": True},
-            {"name": "Quantity", "value": str(info['quantity']), "inline": True},
-            {"name": "Creator", "value": f"[{info['creator']}]({info['creator_link']})", "inline": True}
-        ]
+    location_value = f"[{info['game_name']}]({info['game_url']})" if info["game_url"] else "Catalog Website"
 
-    elif stream_type == "paid":
-        buy_text = f"[🛒 Buy In-Game]({info['game_url']})" if info["game_url"] else "🛒 Buy In-Game"
-
-        description = (
-            f"✨ **{info['type_desc']}**\n"
-            f"🛑 Limit {info['quantity']}\n"
-            f"🌐 [Roblox Page]({item_url}) │ 👕 [Try On]({try_on_url})\n\n"
-            f"{buy_text}"
-        )
-
-        fields = [
-            {"name": "Price", "value": str(info['price']).replace(' Robux', ''), "inline": True},
-            {"name": "Quantity", "value": str(info['quantity']), "inline": True},
-            {"name": "Creator", "value": f"[{info['creator']}]({info['creator_link']})", "inline": True}
-        ]
-
-    else:
-        sale_text = ""
-
-        if info["game_url"]:
-            sale_text += f"• [{info['game_name']}]({info['game_url']})\n"
-
-        description = (
-            f"✨ **{info['type_desc']}**\n"
-            f"🛑 Limit {info['quantity']}\n"
-            f"🎮 In-Game Only\n"
-            f"🌐 [Roblox Page]({item_url}) │ 👕 [Try On]({try_on_url})\n\n"
-            f"**Sale Locations**\n"
-            f"{sale_text}"
-        )
-
-        fields = [
-            {"name": "Price", "value": "FREE", "inline": True},
-            {"name": "Quantity", "value": str(info['quantity']), "inline": True},
-            {"name": "Creator", "value": f"[{info['creator']}]({info['creator_link']})", "inline": True}
-        ]
+    fields = [
+        {"name": "Sale Location", "value": location_value, "inline": False},
+        {"name": "Price", "value": "FREE" if stream_type in ["free", "website"] else str(info["price"]), "inline": True},
+        {"name": "Quantity", "value": str(info["quantity"]), "inline": True},
+        {"name": "Creator", "value": f"[{info['creator']}]({info['creator_link']})", "inline": True}
+    ]
 
     embed = {
         "author": {
