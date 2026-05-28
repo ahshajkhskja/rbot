@@ -7,13 +7,13 @@ URL_FREE = "https://neriumsearch.onrender.com/api/collectibles/free"
 URL_PAID = "https://neriumsearch.onrender.com/api/collectibles/paid"
 URL_WEBSITE = "https://neriumsearch.onrender.com/api/collectibles/website"
 
-WEBHOOK_PAID = "https://discord.com/api/webhooks/1509547466544906261/V2bEbaQj0prbnoe2Dm8U2cuuAIvNE8ckc-xXcIzYw9oJ-GYcWnpsVL1m9-ns8l98nQs-"
-WEBHOOK_REGULAR = "https://discord.com/api/webhooks/1509547466544906261/V2bEbaQj0prbnoe2Dm8U2cuuAIvNE8ckc-xXcIzYw9oJ-GYcWnpsVL1m9-ns8l98nQs-"
-WEBHOOK_WEB_UGC = "https://discord.com/api/webhooks/1509547466544906261/V2bEbaQj0prbnoe2Dm8U2cuuAIvNE8ckc-xXcIzYw9oJ-GYcWnpsVL1m9-ns8l98nQs-"
+WEBHOOK_FREE = "https://discord.com/api/webhooks/1509547466544906261/V2bEbaQj0prbnoe2Dm8U2cuuAIvNE8ckc-xXcIzYw9oJ-GYcWnpsVL1m9-ns8l98nQs-"
+WEBHOOK_PAID = "https://discord.com/api/webhooks/1509558004918390854/SwdjBDN2iOQgufwjoEz4Es2k2MOGRLwvMbouzwq09LtCx3cao3AyQpKnKLIUNAkEmPUq"
+WEBHOOK_WEB_UGC = "https://discord.com/api/webhooks/1509558078318837923/44tRzz1F1sqoRKAzIonHqpNOVVIS_funokLq8ddhpVvPE8c8jJnEJXm1R1ZvVMwACcy2"
 
-ROLE_REGULAR = "1509514820913729557"
-ROLE_WEB_UGC = "1509514936165076992"
+ROLE_FREE = "1509514820913729557"
 ROLE_PAID = "1509514936165076992"
+ROLE_WEB_UGC = "1509533927134593105"
 
 POLL_INTERVAL = 3
 
@@ -104,14 +104,20 @@ def send_premium_webhook(asset_id, stream_type):
         webhook_url = WEBHOOK_PAID
         role_id = ROLE_PAID
         embed_color = 15158332
+        sale_emoji = "🛒"
+        sale_text = "Buy In-Game"
     elif stream_type == "website":
         webhook_url = WEBHOOK_WEB_UGC
         role_id = ROLE_WEB_UGC
         embed_color = 3066993
+        sale_emoji = "✅"
+        sale_text = "Get in-game without captcha!"
     else:
-        webhook_url = WEBHOOK_REGULAR
-        role_id = ROLE_REGULAR
+        webhook_url = WEBHOOK_FREE
+        role_id = ROLE_FREE
         embed_color = 3447003
+        sale_emoji = "✅"
+        sale_text = "Get in-game without captcha!"
 
     item_url = f"https://www.roblox.com/catalog/{asset_id}/"
     try_on_url = f"https://www.roblox.com/catalog/{asset_id}/#try-on-item"
@@ -121,7 +127,7 @@ def send_premium_webhook(asset_id, stream_type):
         sale_value = f"[{info['game_name']}]({info['game_url']})"
     else:
         location_status = "Web UGC"
-        sale_value = f"[Catalog Website]({item_url})"
+        sale_value = f"[{sale_text}]({item_url})"
 
     description = (
         f"⭐ **{info['type_desc']}**\n"
@@ -130,7 +136,7 @@ def send_premium_webhook(asset_id, stream_type):
     )
 
     fields = [
-        {"name": "Sale Location", "value": sale_value, "inline": False},
+        {"name": "Sale Location", "value": f"{sale_emoji} {sale_value}", "inline": False},
         {"name": "Price", "value": info["price"], "inline": True},
         {"name": "Quantity", "value": str(info["quantity"]), "inline": True},
         {"name": "Creator", "value": f"[{info['creator']}]({info['creator_link']})", "inline": True}
