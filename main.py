@@ -1,4 +1,3 @@
-
 import time
 import json
 import hashlib
@@ -17,8 +16,10 @@ ROLE_PAID = "1509514936165076992"
 ROLE_WEB_UGC = "1509533927134593105"
 
 POLL_INTERVAL = 3
+ROBLOX_API_KEY = "wF5muFy4yEeh9oBuqtDlPDnEWfReN1W1cVPybDR1/IvqRrufZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNkluTnBaeTB5TURJeExUQTNMVEV6VkRFNE9qVXhPalE1V2lJc0luUjVjQ0k2SWtwWFZDSjkuZXlKaGRXUWlPaUpTYjJKc2IzaEpiblJsY201aGJDSXNJbWx6Y3lJNklrTnNiM1ZrUVhWMGFHVnVkR2xqWVhScGIyNVRaWEoyYVdObElpd2lZbUZ6WlVGd2FVdGxlU0k2SW5kR05XMTFSbmswZVVWbGFEbHZRblZ4ZEVSc1VFUnVSVmRtVW1WT01WY3hZMVpRZVdKRVVqRXZTWFp4VW5KMVppSXNJbTkzYm1WeVNXUWlPaUl4TURrNE5USTJOekE1TmlJc0ltVjRjQ0k2TVRjNE1EQXhOVEV6TVN3aWFXRjBJam94Tnpnd01ERXhOVE14TENKdVltWWlPakUzT0RBd01URTFNekY5LmRJSHRSN1Vobzd6MF9yR3EzdGVqSmZ6M3Myd0JqdjJuZlhOdW15am50UXZCcUU5czN2bmhES1pnMzlVRTdMcWM2S1FHaXRkN2k3NHRoQlRpTzBJbUVsZ1BjZ1pkQjJMbC1VbDU1aE96YVd4RVhyUTdtV3FDempCT0NHelp2Vm0weXpCS1NUb1hyaVVaQWdFeC04b2dEcndXd1FiNi1TbTBFdk1xVEJtWndRLUNRdVFpYWwwQlppOHkwVXo2MU51YVBYRXF3eUxBcmhGeG1ZOFNRRUxMUE9fa1RxYnEtZHNvc1VjUzZnZEFWVTU2TEpOMFJoSGl1ZURKWWg0WG5zOC1felFYT0RlNmZJT2hHRE4xTndtYXpMcThMbnc0UURjZExMcDYyWlN1cFotcnVYbEl4a1ExQVVrVzVBVC05X1J4VnFvVEJRQXNJTU5tRV9sNkNaTTF1UQ=="
 
 session = requests.Session()
+session.headers.update({"x-api-key": ROBLOX_API_KEY})
 
 def get_detailed_roblox_info(asset_id):
     item_name = "Unknown UGC Item"
@@ -31,7 +32,7 @@ def get_detailed_roblox_info(asset_id):
     game_url = None
     game_name = "N/A"
     thumb_url = None
-    
+
     try:
         res = session.get(f"https://economy.roblox.com/v2/assets/{asset_id}/details", timeout=8)
         if res.ok:
@@ -46,12 +47,10 @@ def get_detailed_roblox_info(asset_id):
                 price_val = f"{price} Robux"
             else:
                 price_val = "FREE"
-            
             collectible_details = det.get("CollectiblesItemDetails", {})
             total_qty = collectible_details.get("TotalQuantity")
             if total_qty is not None:
                 total_quantity = str(total_qty)
-            
             sale_location_data = det.get("SaleLocation", {})
             universe_ids = sale_location_data.get("UniverseIds", [])
             if universe_ids:
@@ -70,16 +69,28 @@ def get_detailed_roblox_info(asset_id):
                 sale_location = "Web UGC"
     except Exception:
         pass
-    
-    try:
-        thumb_res = session.get(f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false", timeout=8)
-        if thumb_res.ok:
-            thumb_data = thumb_res.json().get("data", [])
-            if thumb_data:
-                thumb_url = thumb_data[0].get("imageUrl")
-    except Exception:
-        pass
-    
+
+    for attempt in range(5):
+        try:
+            thumb_res = session.get(
+                f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false",
+                timeout=8
+            )
+            if thumb_res.ok:
+                thumb_data = thumb_res.json().get("data", [])
+                if thumb_data:
+                    state = thumb_data[0].get("state", "")
+                    url = thumb_data[0].get("imageUrl")
+                    if url and url.startswith("http") and state != "Blocked":
+                        thumb_url = url
+                        break
+        except Exception:
+            pass
+        time.sleep(2)
+
+    if not thumb_url:
+        thumb_url = f"https://tr.rbxcdn.com/{asset_id}/420/420/Image/Png"
+
     return {
         "name": item_name,
         "creator": creator_name,
@@ -94,7 +105,7 @@ def get_detailed_roblox_info(asset_id):
 
 def send_premium_webhook(asset_id, stream_type):
     info = get_detailed_roblox_info(asset_id)
-    
+
     if stream_type == "paid":
         webhook_url = WEBHOOK_PAID
         role_id = ROLE_PAID
@@ -116,7 +127,7 @@ def send_premium_webhook(asset_id, stream_type):
 
     item_url = f"https://www.roblox.com/catalog/{asset_id}/"
     try_on_url = f"https://www.roblox.com/catalog/{asset_id}/#try-on-item"
-    
+
     if stream_type == "free" and info["game_url"]:
         location_status = "In-Game Only"
         sale_value = f"[{info['game_name']}]({info['game_url']})"
@@ -130,9 +141,7 @@ def send_premium_webhook(asset_id, stream_type):
             f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
         )
     else:
-        description = (
-            f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
-        )
+        description = f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
 
     fields = [
         {"name": "Sale Location", "value": f"{sale_emoji} {sale_value}", "inline": False},
@@ -160,7 +169,7 @@ def send_premium_webhook(asset_id, stream_type):
         payload["allowed_mentions"] = {"roles": [role_id]}
 
     try:
-        session.post(webhook_url, json=payload, timeout=8)
+        requests.post(webhook_url, json=payload, timeout=8)
     except Exception:
         pass
 
@@ -184,14 +193,12 @@ def monitor():
                     if asset_id not in processed_ids:
                         processed_ids.add(asset_id)
                         send_premium_webhook(asset_id, "free")
-            
             for item in fetch_data(URL_PAID):
                 if isinstance(item, dict) and "paid" in item:
                     asset_id = str(item["paid"])
                     if asset_id not in processed_ids:
                         processed_ids.add(asset_id)
                         send_premium_webhook(asset_id, "paid")
-            
             for item in fetch_data(URL_WEBSITE):
                 if isinstance(item, dict):
                     asset_id = item.get("website") or item.get("free") or item.get("paid")
