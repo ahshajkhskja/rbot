@@ -31,7 +31,6 @@ def get_detailed_roblox_info(asset_id):
     game_name = "N/A"
     thumb_url = None
     item_type_desc = "UGC Limited Detected"
-    user_limit = "N/A"
     
     try:
         res = session.get(f"https://economy.roblox.com/v2/assets/{asset_id}/details", timeout=8)
@@ -52,7 +51,6 @@ def get_detailed_roblox_info(asset_id):
             total_qty = collectible_details.get("TotalQuantity")
             if total_qty is not None:
                 total_quantity = str(total_qty)
-                user_limit = str(total_qty)
             
             sale_location_data = det.get("SaleLocation", {})
             universe_ids = sale_location_data.get("UniverseIds", [])
@@ -92,7 +90,6 @@ def get_detailed_roblox_info(asset_id):
         "creator_link": f"https://www.roblox.com/groups/{creator_id}/" if str(creator_type) == "Group" else f"https://www.roblox.com/users/{creator_id}/profile",
         "price": price_val,
         "quantity": total_quantity,
-        "user_limit": user_limit,
         "location": sale_location,
         "game_name": game_name,
         "game_url": game_url,
@@ -107,19 +104,19 @@ def send_premium_webhook(asset_id, stream_type):
         webhook_url = WEBHOOK_PAID
         role_id = ROLE_PAID
         embed_color = 15158332
-        sale_emoji = "🛒"
+        sale_emoji = "💎"
         sale_text = "Buy In Catalog"
     elif stream_type == "website":
         webhook_url = WEBHOOK_WEB_UGC
         role_id = ROLE_WEB_UGC
         embed_color = 3066993
-        sale_emoji = "✅"
+        sale_emoji = "🏷️"
         sale_text = "Go Get This Web Fast"
     else:
         webhook_url = WEBHOOK_FREE
         role_id = ROLE_FREE
         embed_color = 3447003
-        sale_emoji = "✅"
+        sale_emoji = "🧺"
         sale_text = "Get in-game without captcha!"
 
     item_url = f"https://www.roblox.com/catalog/{asset_id}/"
@@ -135,14 +132,12 @@ def send_premium_webhook(asset_id, stream_type):
     if location_status:
         description = (
             f"⭐ **{info['type_desc']}**\n"
-            f"🔴 **Limit {info['user_limit']}**\n"
             f"🌐 **{location_status}**\n"
             f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
         )
     else:
         description = (
             f"⭐ **{info['type_desc']}**\n"
-            f"🔴 **Limit {info['user_limit']}**\n"
             f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
         )
 
@@ -160,7 +155,7 @@ def send_premium_webhook(asset_id, stream_type):
         "description": description,
         "color": embed_color,
         "fields": fields,
-        "footer": {"text": f"Nerium Engine • Asset ID: {asset_id}"}
+        "footer": {"text": f"Asset ID: {asset_id}"}
     }
 
     if info["thumb"] and str(info["thumb"]).startswith("http"):
