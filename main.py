@@ -66,6 +66,8 @@ def get_detailed_roblox_info(asset_id):
                         game_name = game.get("name", "Target Experience")
                         if root_place:
                             game_url = f"https://www.roblox.com/games/{root_place}/"
+            else:
+                sale_location = "Web UGC"
             
             is_limited = collectible_details.get("IsLimited")
             if is_limited:
@@ -116,13 +118,10 @@ def send_premium_webhook(asset_id, stream_type):
     
     if info["game_url"]:
         location_status = "In-Game Only"
+        sale_value = f"[{info['game_name']}]({info['game_url']})"
     else:
         location_status = "Web UGC"
-
-    if stream_type == "free":
-        sale_value = "Flex UGC Codes"
-    else:
-        sale_value = info["location"]
+        sale_value = f"[Catalog Website]({item_url})"
 
     description = (
         f"⭐ **{info['type_desc']}**\n"
