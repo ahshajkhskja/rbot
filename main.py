@@ -110,13 +110,13 @@ def send_premium_webhook(asset_id, stream_type):
         webhook_url = WEBHOOK_WEB_UGC
         role_id = ROLE_WEB_UGC
         embed_color = 3066993
-        sale_emoji = "✅"
+        sale_emoji = "🤯"
         sale_text = "Go Get This Web Fast"
     else:
         webhook_url = WEBHOOK_FREE
         role_id = ROLE_FREE
         embed_color = 3447003
-        sale_emoji = "✅"
+        sale_emoji = "🪣"
         sale_text = "Get in-game without captcha!"
 
     item_url = f"https://www.roblox.com/catalog/{asset_id}/"
