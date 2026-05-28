@@ -105,13 +105,13 @@ def send_premium_webhook(asset_id, stream_type):
         role_id = ROLE_PAID
         embed_color = 15158332
         sale_emoji = "🛒"
-        sale_text = "Buy In-Game"
+        sale_text = "Buy In Catalog"
     elif stream_type == "website":
         webhook_url = WEBHOOK_WEB_UGC
         role_id = ROLE_WEB_UGC
         embed_color = 3066993
         sale_emoji = "✅"
-        sale_text = "Get in-game without captcha!"
+        sale_text = "Go Get This Web Fast"
     else:
         webhook_url = WEBHOOK_FREE
         role_id = ROLE_FREE
@@ -122,11 +122,11 @@ def send_premium_webhook(asset_id, stream_type):
     item_url = f"https://www.roblox.com/catalog/{asset_id}/"
     try_on_url = f"https://www.roblox.com/catalog/{asset_id}/#try-on-item"
     
-    if info["game_url"]:
+    if stream_type == "free" and info["game_url"]:
         location_status = "In-Game Only"
         sale_value = f"[{info['game_name']}]({info['game_url']})"
     else:
-        location_status = "Web UGC"
+        location_status = "Web UGC" if stream_type != "free" else "In-Game Only"
         sale_value = f"[{sale_text}]({item_url})"
 
     description = (
