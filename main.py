@@ -66,6 +66,8 @@ def get_detailed_roblox_info(asset_id):
                         game_name = game.get("name", "Target Experience")
                         if root_place:
                             game_url = f"https://www.roblox.com/games/{root_place}/"
+            else:
+                sale_location = "Web UGC"
             
             is_limited = collectible_details.get("IsLimited")
             if is_limited:
@@ -118,13 +120,13 @@ def send_premium_webhook(asset_id, stream_type):
         location_status = "In-Game Only"
         location_value = f"[{info['game_name']}]({info['game_url']})"
     else:
-        location_status = "Web UGC" if stream_type in ["website", "paid"] else "Catalog Website"
+        location_status = "Web UGC"
         location_value = "Catalog Website"
 
     description = (
         f"✨ **{info['type_desc']}**\n"
-        f"🎮 **{location_status}**\n"
-        f"🌐 [Roblox Page]({item_url}) │ 👕 [Try On]({try_on_url})"
+        f"🌐 **{location_status}**\n"
+        f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
     )
 
     fields = [
@@ -152,8 +154,6 @@ def send_premium_webhook(asset_id, stream_type):
     if role_id:
         payload["content"] = f"<@&{role_id}>"
         payload["allowed_mentions"] = {"roles": [role_id]}
-    else:
-        payload["allowed_mentions"] = {"parse": []}
 
     try:
         session.post(webhook_url, json=payload, timeout=8)
