@@ -141,7 +141,6 @@ def send_premium_webhook(asset_id, stream_type):
     ]
 
     embed = {
-        "author": {"name": "Rolimon's"},
         "title": info["name"],
         "url": item_url,
         "description": description,
