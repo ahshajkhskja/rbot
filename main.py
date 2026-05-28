@@ -70,9 +70,12 @@ def get_detailed_roblox_info(asset_id):
     except Exception:
         pass
 
+    thumb_session = requests.Session()
+    thumb_session.headers.update({"User-Agent": "Mozilla/5.0"})
+
     for attempt in range(5):
         try:
-            thumb_res = session.get(
+            thumb_res = thumb_session.get(
                 f"https://thumbnails.roblox.com/v1/assets?assetIds={asset_id}&size=420x420&format=Png&isCircular=false",
                 timeout=8
             )
