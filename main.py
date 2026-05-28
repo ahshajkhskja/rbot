@@ -126,14 +126,20 @@ def send_premium_webhook(asset_id, stream_type):
         location_status = "In-Game Only"
         sale_value = f"[{info['game_name']}]({info['game_url']})"
     else:
-        location_status = "Web UGC" if stream_type != "free" else "In-Game Only"
+        location_status = ""
         sale_value = f"[{sale_text}]({item_url})"
 
-    description = (
-        f"⭐ **{info['type_desc']}**\n"
-        f"🌐 **{location_status}**\n"
-        f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
-    )
+    if location_status:
+        description = (
+            f"⭐ **{info['type_desc']}**\n"
+            f"🌐 **{location_status}**\n"
+            f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
+        )
+    else:
+        description = (
+            f"⭐ **{info['type_desc']}**\n"
+            f"[Roblox Page]({item_url}) | [Try On]({try_on_url})"
+        )
 
     fields = [
         {"name": "Sale Location", "value": f"{sale_emoji} {sale_value}", "inline": False},
