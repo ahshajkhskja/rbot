@@ -174,31 +174,34 @@ def fetch_data(url):
     return []
 
 def monitor():
-    processed_hashes = set()
+    processed_ids = set()
     while True:
         try:
+            # Free
             for item in fetch_data(URL_FREE):
                 if isinstance(item, dict) and "free" in item:
-                    h = hashlib.md5(json.dumps(item, sort_keys=True).encode()).hexdigest()
-                    if h not in processed_hashes:
-                        processed_hashes.add(h)
-                        send_premium_webhook(str(item["free"]), "free")
+                    asset_id = str(item["free"])
+                    if asset_id not in processed_ids:
+                        processed_ids.add(asset_id)
+                        send_premium_webhook(asset_id, "free")
             
+            # Paid
             for item in fetch_data(URL_PAID):
                 if isinstance(item, dict) and "paid" in item:
-                    h = hashlib.md5(json.dumps(item, sort_keys=True).encode()).hexdigest()
-                    if h not in processed_hashes:
-                        processed_hashes.add(h)
-                        send_premium_webhook(str(item["paid"]), "paid")
+                    asset_id = str(item["paid"])
+                    if asset_id not in processed_ids:
+                        processed_ids.add(asset_id)
+                        send_premium_webhook(asset_id, "paid")
             
+            # Website
             for item in fetch_data(URL_WEBSITE):
                 if isinstance(item, dict):
                     asset_id = item.get("website") or item.get("free") or item.get("paid")
                     if asset_id:
-                        h = hashlib.md5(json.dumps(item, sort_keys=True).encode()).hexdigest()
-                        if h not in processed_hashes:
-                            processed_hashes.add(h)
-                            send_premium_webhook(str(asset_id), "website")
+                        asset_id = str(asset_id)
+                        if asset_id not in processed_ids:
+                            processed_ids.add(asset_id)
+                            send_premium_webhook(asset_id, "website")
         except Exception:
             pass
         time.sleep(POLL_INTERVAL)
